@@ -69,7 +69,7 @@ namespace MyClockIn
             WshShell Shell = new WshShell();
             string ShortcutAddress = StartupFolder + "\\" + Application.ProductName + ".lnk";
             IWshShortcut Shortcut = (IWshShortcut)Shell.CreateShortcut(ShortcutAddress);
-            Shortcut.Description = "A startup shortcut. If you delete this shortcut from your computer, LaunchOnStartup.exe will not launch on Windows Startup"; // set the description of the shortcut
+            Shortcut.Description = "A startup shortcut. If you delete this shortcut from your computer, " + Application.ProductName + ".exe will not launch on Windows Startup"; // set the description of the shortcut
             Shortcut.WorkingDirectory = Application.StartupPath; // working directory
             Shortcut.TargetPath = Application.ExecutablePath; // path of the executable
             Shortcut.Save(); // save the shortcut
