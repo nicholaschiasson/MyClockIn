@@ -22,11 +22,16 @@ namespace MyClockIn
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
+            bool session = false;
             bool clockIn = false;
             bool clockOut = false;
 
             foreach (string arg in Environment.GetCommandLineArgs())
             {
+                if (arg.ToLower() == "-s")
+                {
+                    session = true;
+                }
                 if (arg.ToLower() == "-i")
                 {
                     clockIn = true;
@@ -43,7 +48,25 @@ namespace MyClockIn
                 clockOut = false;
             }
 
-            Application.Run(new InputCredentials(clockIn, clockOut));
+            if (session)
+            {
+                clockIn = true;
+                clockOut = true;
+            }
+
+            /*
+            string filename = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + "\\MyClockIn_Run";
+            try
+            {
+                System.IO.File.WriteAllLines(filename, Environment.GetCommandLineArgs());
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            */
+
+            Application.Run(new InputCredentials(session, clockIn, clockOut));
         }
     }
 }

@@ -28,18 +28,20 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.DomainTextBox = new System.Windows.Forms.TextBox();
             this.UsernameTextBox = new System.Windows.Forms.TextBox();
-            this.LoginButton = new System.Windows.Forms.Button();
+            this.SubmitButton = new System.Windows.Forms.Button();
             this.CancelLoginButton = new System.Windows.Forms.Button();
             this.PasswordTextBox = new System.Windows.Forms.TextBox();
             this.ClockingInRadioButton = new System.Windows.Forms.RadioButton();
             this.ClockingOutRadioButton = new System.Windows.Forms.RadioButton();
             this.SessionRadioButton = new System.Windows.Forms.RadioButton();
+            this.SessionTimer = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // label1
@@ -93,15 +95,15 @@
             this.UsernameTextBox.Size = new System.Drawing.Size(196, 20);
             this.UsernameTextBox.TabIndex = 0;
             // 
-            // LoginButton
+            // SubmitButton
             // 
-            this.LoginButton.Location = new System.Drawing.Point(116, 136);
-            this.LoginButton.Name = "LoginButton";
-            this.LoginButton.Size = new System.Drawing.Size(75, 23);
-            this.LoginButton.TabIndex = 5;
-            this.LoginButton.Text = "Login";
-            this.LoginButton.UseVisualStyleBackColor = true;
-            this.LoginButton.Click += new System.EventHandler(this.LoginButton_Click);
+            this.SubmitButton.Location = new System.Drawing.Point(116, 136);
+            this.SubmitButton.Name = "SubmitButton";
+            this.SubmitButton.Size = new System.Drawing.Size(75, 23);
+            this.SubmitButton.TabIndex = 5;
+            this.SubmitButton.Text = "Submit";
+            this.SubmitButton.UseVisualStyleBackColor = true;
+            this.SubmitButton.Click += new System.EventHandler(this.SubmitButton_Click);
             // 
             // CancelLoginButton
             // 
@@ -131,6 +133,7 @@
             this.ClockingInRadioButton.TabIndex = 3;
             this.ClockingInRadioButton.Text = "ClockingIn";
             this.ClockingInRadioButton.UseVisualStyleBackColor = true;
+            this.ClockingInRadioButton.CheckedChanged += new System.EventHandler(this.ClockingInRadioButton_CheckedChanged);
             // 
             // ClockingOutRadioButton
             // 
@@ -141,6 +144,7 @@
             this.ClockingOutRadioButton.TabIndex = 4;
             this.ClockingOutRadioButton.Text = "ClockingOut";
             this.ClockingOutRadioButton.UseVisualStyleBackColor = true;
+            this.ClockingOutRadioButton.CheckedChanged += new System.EventHandler(this.ClockingOutRadioButton_CheckedChanged);
             // 
             // SessionRadioButton
             // 
@@ -153,10 +157,16 @@
             this.SessionRadioButton.TabStop = true;
             this.SessionRadioButton.Text = "Session";
             this.SessionRadioButton.UseVisualStyleBackColor = true;
+            this.SessionRadioButton.CheckedChanged += new System.EventHandler(this.SessionRadioButton_CheckedChanged);
+            // 
+            // SessionTimer
+            // 
+            this.SessionTimer.Interval = 1000;
+            this.SessionTimer.Tick += new System.EventHandler(this.SessionTimer_Tick);
             // 
             // InputCredentials
             // 
-            this.AcceptButton = this.LoginButton;
+            this.AcceptButton = this.SubmitButton;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelLoginButton;
@@ -167,7 +177,7 @@
             this.Controls.Add(this.ClockingInRadioButton);
             this.Controls.Add(this.PasswordTextBox);
             this.Controls.Add(this.CancelLoginButton);
-            this.Controls.Add(this.LoginButton);
+            this.Controls.Add(this.SubmitButton);
             this.Controls.Add(this.UsernameTextBox);
             this.Controls.Add(this.DomainTextBox);
             this.Controls.Add(this.label4);
@@ -194,11 +204,12 @@
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.TextBox DomainTextBox;
         private System.Windows.Forms.TextBox UsernameTextBox;
-        private System.Windows.Forms.Button LoginButton;
+        private System.Windows.Forms.Button SubmitButton;
         private System.Windows.Forms.Button CancelLoginButton;
         private System.Windows.Forms.TextBox PasswordTextBox;
         private System.Windows.Forms.RadioButton ClockingInRadioButton;
         private System.Windows.Forms.RadioButton ClockingOutRadioButton;
         private System.Windows.Forms.RadioButton SessionRadioButton;
+        private System.Windows.Forms.Timer SessionTimer;
     }
 }
