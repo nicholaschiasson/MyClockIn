@@ -11,9 +11,16 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using IWshRuntimeLibrary;
+using Microsoft.Win32;
 
 namespace MyClockIn
 {
+    enum ClockType
+    {
+        In,
+        Out,
+    }
+
     public partial class InputCredentials : Form
     {
         string SystemAppData;
@@ -33,18 +40,162 @@ namespace MyClockIn
         StreamWriter UserClockInFile;
         StreamWriter UserClockOutFile;
 
-        public InputCredentials()
+        bool ClockingIn;
+        bool ClockingOut;
+
+        public InputCredentials(bool clockIn = false, bool clockOut = false)
         {
+            ClockingIn = clockIn;
+            ClockingOut = clockOut;
             InitializeComponent();
         }
 
         private void InputCredentials_Load(object sender, EventArgs e)
         {
+            if (ClockingIn)
+            {
+                ClockingInRadioButton.Checked = true;
+            }
+            if (ClockingOut)
+            {
+                ClockingOutRadioButton.Checked = true;
+            }
+
+            try
+            {
+                string error = string.Empty;
+
+                System.Diagnostics.Process process = new System.Diagnostics.Process();
+                System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
+                startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+                startInfo.UseShellExecute = true;
+                startInfo.RedirectStandardError = false;
+                startInfo.FileName = "cmd.exe";
+                
+                string xmlTmpName = Directory.GetCurrentDirectory() + "tmp.xml";
+                FileInfo xmlTmpFile = new FileInfo(xmlTmpName);
+                FileStream xmlTmp = null;
+                if (xmlTmpFile.Exists)
+                    xmlTmp = new FileStream(xmlTmpName, FileMode.Truncate, FileAccess.Write, FileShare.Read);
+                else
+                    xmlTmp = new FileStream(xmlTmpName, FileMode.Append, FileAccess.Write, FileShare.Read);
+                StreamWriter stream = new StreamWriter(xmlTmp);
+                stream.WriteLine(GetXmlTemplateString(ClockType.In));
+                stream.Close();
+
+                startInfo.UseShellExecute = true;
+                startInfo.RedirectStandardError = false;
+                startInfo.FileName = "cmd.exe";
+                startInfo.Arguments = "/C schtasks /create /f /tn \"" + Application.ProductName +
+                    "-ClockIn\" /xml \"" + xmlTmpName + "\"";
+                process.StartInfo = startInfo;
+                process.Start();
+                process.WaitForExit();
+
+                xmlTmpFile.Delete();
+
+                xmlTmp = null;
+                if (xmlTmpFile.Exists)
+                    xmlTmp = new FileStream(xmlTmpName, FileMode.Truncate, FileAccess.Write, FileShare.Read);
+                else
+                    xmlTmp = new FileStream(xmlTmpName, FileMode.Append, FileAccess.Write, FileShare.Read);
+                stream = new StreamWriter(xmlTmp);
+                stream.WriteLine(GetXmlTemplateString(ClockType.Out));
+                stream.Close();
+
+                startInfo.UseShellExecute = true;
+                startInfo.RedirectStandardError = false;
+                startInfo.Arguments = "/C schtasks /create /f /tn \"" + Application.ProductName +
+                    "-ClockOut\" /xml \"" + xmlTmpName + "\"";
+                process.StartInfo = startInfo;
+                process.Start();
+                process.WaitForExit();
+
+                xmlTmpFile.Delete();
+            }
+            catch (Exception exception)
+            {
+                MessageBox.Show("Current user has not been authorized.", "Exiting");
+                Close();
+            }
+
             DomainTextBox.Text = Environment.MachineName;
 
             SystemAppData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
             ProductSystemAppDataFolder = SystemAppData + "\\" + Application.ProductName;
             SystemDir = Directory.CreateDirectory(ProductSystemAppDataFolder);
+        }
+
+        private string GetXmlTemplateString(ClockType clockType)
+        {
+            string now = DateTime.Now.ToString("yyyy/MM/ddTHH:mm:ss");
+
+            string trigger = string.Empty;
+            string arg = string.Empty;
+
+            if (clockType == ClockType.In)
+            {
+                trigger = @"
+        <LogonTrigger>
+          <Enabled>true</Enabled>
+        </LogonTrigger>";
+                arg = "-i";
+            }
+            else if (clockType == ClockType.Out)
+            {
+                trigger = @"
+        <SessionStateChangeTrigger>
+          <Enabled>true</Enabled>
+            <StateChange>ConsoleDisconnect</StateChange>
+        </SessionStateChangeTrigger>";
+                arg = "o";
+            }
+
+            string xmlTemplate =
+@"<?xml version=""1.0"" encoding=""UTF-16""?>
+    <Task version=""1.3"" xmlns=""http://schemas.microsoft.com/windows/2004/02/mit/task"">
+      <RegistrationInfo>
+        <Date>" + now + @"</Date>
+        <Author>" + Environment.UserName + @"</Author>
+      </RegistrationInfo>
+      <Triggers>" + trigger + @"
+      </Triggers>
+      <Principals>
+        <Principal id=""Author"">
+          <UserId>" + System.Security.Principal.WindowsIdentity.GetCurrent().Name + @"</UserId>
+      <LogonType>InteractiveToken</LogonType>
+          <RunLevel>HighestAvailable</RunLevel>
+        </Principal>
+      </Principals>
+      <Settings>
+        <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+        <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+        <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+        <AllowHardTerminate>true</AllowHardTerminate>
+        <StartWhenAvailable>false</StartWhenAvailable>
+        <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
+        <IdleSettings>
+          <StopOnIdleEnd>true</StopOnIdleEnd>
+          <RestartOnIdle>false</RestartOnIdle>
+        </IdleSettings>
+        <AllowStartOnDemand>true</AllowStartOnDemand>
+        <Enabled>true</Enabled>
+        <Hidden>false</Hidden>
+        <RunOnlyIfIdle>false</RunOnlyIfIdle>
+        <DisallowStartOnRemoteAppSession>false</DisallowStartOnRemoteAppSession>
+        <UseUnifiedSchedulingEngine>false</UseUnifiedSchedulingEngine>
+        <WakeToRun>false</WakeToRun>
+        <ExecutionTimeLimit>PT1H</ExecutionTimeLimit>
+        <Priority>7</Priority>
+      </Settings>
+      <Actions Context=""Author"">
+        <Exec>
+          <Command>" + Application.ExecutablePath + @"</Command>
+          <Arguments>" + arg + @"</Arguments>
+        </Exec>
+      </Actions>
+    </Task>";
+            return xmlTemplate;
         }
 
         private void LoginButton_Click(object sender, EventArgs e)
@@ -64,15 +215,6 @@ namespace MyClockIn
                 UserContext = null;
                 return;
             }
-
-            string StartupFolder = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-            WshShell Shell = new WshShell();
-            string ShortcutAddress = StartupFolder + "\\" + Application.ProductName + ".lnk";
-            IWshShortcut Shortcut = (IWshShortcut)Shell.CreateShortcut(ShortcutAddress);
-            Shortcut.Description = "A startup shortcut. If you delete this shortcut from your computer, " + Application.ProductName + ".exe will not launch on Windows Startup"; // set the description of the shortcut
-            Shortcut.WorkingDirectory = Application.StartupPath; // working directory
-            Shortcut.TargetPath = Application.ExecutablePath; // path of the executable
-            Shortcut.Save(); // save the shortcut
 
             SystemClockInFileName = ProductSystemAppDataFolder + "\\" + UserContext.Domain +
                 "-" + UserContext.Username + "-ClockInTimes";
@@ -103,8 +245,10 @@ namespace MyClockIn
                 SystemClockInFile = OpenFileWriteStream(SystemClockInFileName);
                 UserClockInFile = OpenFileWriteStream(UserClockInFileName);
                 ClockIn();
-                SystemClockInFile.Close();
-                UserClockInFile.Close();
+                if (SystemClockInFile != null)
+                    SystemClockInFile.Close();
+                if (UserClockInFile != null)
+                    UserClockInFile.Close();
                 Close();
             }
             else if (ClockingOutRadioButton.Checked)
@@ -112,8 +256,10 @@ namespace MyClockIn
                 SystemClockOutFile = OpenFileWriteStream(SystemClockOutFileName);
                 UserClockOutFile = OpenFileWriteStream(UserClockOutFileName);
                 ClockOut();
-                SystemClockOutFile.Close();
-                UserClockOutFile.Close();
+                if (SystemClockOutFile != null)
+                    SystemClockOutFile.Close();
+                if (UserClockOutFile != null)
+                    UserClockOutFile.Close();
                 Close();
             }
 
@@ -130,50 +276,78 @@ namespace MyClockIn
             SystemClockOutFile = OpenFileWriteStream(SystemClockOutFileName);
             UserClockOutFile = OpenFileWriteStream(UserClockOutFileName);
             ClockOut();
-            SystemClockOutFile.Close();
-            UserClockOutFile.Close();
+            if (SystemClockOutFile != null)
+                SystemClockOutFile.Close();
+            if (UserClockOutFile != null)
+                UserClockOutFile.Close();
         }
 
         private void ClockIn()
         {
-            DateTime now = DateTime.Now;
-            SystemClockInFile.WriteLine(now + " - v" + Assembly.GetExecutingAssembly().GetName().Version);
-            UserClockInFile.WriteLine(now + " - v" + Assembly.GetExecutingAssembly().GetName().Version);
+            try
+            {
+                DateTime now = DateTime.Now;
+                SystemClockInFile.WriteLine(now + " - v" + Assembly.GetExecutingAssembly().GetName().Version);
+                UserClockInFile.WriteLine(now + " - v" + Assembly.GetExecutingAssembly().GetName().Version);
+            }
+            catch (Exception e) { }
         }
 
         private void ClockOut()
         {
-            DateTime now = DateTime.Now;
-            SystemClockOutFile.WriteLine(now + " - v" + Assembly.GetExecutingAssembly().GetName().Version);
-            UserClockOutFile.WriteLine(now + " - v" + Assembly.GetExecutingAssembly().GetName().Version);
+            try
+            {
+                DateTime now = DateTime.Now;
+                SystemClockOutFile.WriteLine(now + " - v" + Assembly.GetExecutingAssembly().GetName().Version);
+                UserClockOutFile.WriteLine(now + " - v" + Assembly.GetExecutingAssembly().GetName().Version);
+            }
+            catch (Exception e) { }
         }
 
         private StreamWriter OpenFileReadStream(string FileName, FileMode mode =
             FileMode.OpenOrCreate, FileAccess access = FileAccess.Read, FileShare share =
             FileShare.ReadWrite)
         {
-            FileStream File = new FileStream(FileName, mode, access, share);
-            StreamWriter FileStreamWriter = new StreamWriter(File);
-            return FileStreamWriter;
+            try
+            {
+                FileStream File = new FileStream(FileName, mode, access, share);
+                StreamWriter FileStreamWriter = new StreamWriter(File);
+                return FileStreamWriter;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
         }
 
         private StreamWriter OpenFileWriteStream(string FileName, FileMode mode =
             FileMode.Append, FileAccess access = FileAccess.Write, FileShare share =
             FileShare.Read)
         {
-            FileStream File = new FileStream(FileName, mode, access, share);
-            StreamWriter FileStreamWriter = new StreamWriter(File);
-            return FileStreamWriter;
+            try
+            {
+                FileStream File = new FileStream(FileName, mode, access, share);
+                StreamWriter FileStreamWriter = new StreamWriter(File);
+                return FileStreamWriter;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
         }
 
         private void CopyFileTo(string FileName, string DestinationFileName)
         {
-            FileStream File = new FileStream(FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
-            FileStream DestFile = new FileStream(DestinationFileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
-            DestFile.SetLength(0);
-            File.CopyTo(DestFile);
-            File.Close();
-            DestFile.Close();
+            try
+            {
+                FileStream File = new FileStream(FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
+                FileStream DestFile = new FileStream(DestinationFileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
+                DestFile.SetLength(0);
+                File.CopyTo(DestFile);
+                File.Close();
+                DestFile.Close();
+            }
+            catch (Exception e) { }
         }
     }
 }

@@ -22,7 +22,28 @@ namespace MyClockIn
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            Application.Run(new InputCredentials());
+            bool clockIn = false;
+            bool clockOut = false;
+
+            foreach (string arg in Environment.GetCommandLineArgs())
+            {
+                if (arg.ToLower() == "-i")
+                {
+                    clockIn = true;
+                }
+                if (arg.ToLower() == "-o")
+                {
+                    clockOut = true;
+                }
+            }
+
+            if (clockIn && clockOut)
+            {
+                clockIn = false;
+                clockOut = false;
+            }
+
+            Application.Run(new InputCredentials(clockIn, clockOut));
         }
     }
 }
