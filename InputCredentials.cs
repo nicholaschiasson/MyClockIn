@@ -55,7 +55,7 @@ namespace MyClockIn
 
         private void InputCredentials_Load(object sender, EventArgs e)
         {
-            DomainTextBox.Text = Environment.MachineName;
+            DomainTextBox.Text = Environment.UserDomainName;
 
             SystemAppData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
             ProductSystemAppDataFolder = SystemAppData + "\\" + Application.ProductName;
