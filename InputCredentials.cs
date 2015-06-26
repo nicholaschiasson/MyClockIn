@@ -239,7 +239,7 @@ namespace MyClockIn
         <DisallowStartOnRemoteAppSession>false</DisallowStartOnRemoteAppSession>
         <UseUnifiedSchedulingEngine>false</UseUnifiedSchedulingEngine>
         <WakeToRun>false</WakeToRun>
-        <ExecutionTimeLimit>PT1H</ExecutionTimeLimit>
+        <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
         <Priority>7</Priority>
       </Settings>
       <Actions Context=""Author"">
