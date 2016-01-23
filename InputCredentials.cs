@@ -1,17 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
-using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using IWshRuntimeLibrary;
-using Microsoft.Win32;
 
 namespace MyClockIn
 {
@@ -161,7 +151,7 @@ namespace MyClockIn
                 xmlTmpFile.Delete();
                 */
             }
-            catch (Exception exception)
+            catch (Exception e)
             {
                 MessageBox.Show("Current user has not been authorized.", "Exiting");
                 Close();
@@ -303,7 +293,7 @@ namespace MyClockIn
                 {
                     UserContext.Enter();
                 }
-                catch (Exception ex)
+                catch (Exception e)
                 {
                     MessageBox.Show("Login attempt failed. Please try again.", "Could not login");
                     UserContext = null;
